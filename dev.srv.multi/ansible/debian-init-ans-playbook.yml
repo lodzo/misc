@@ -1,0 +1,54 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+
+    - name: Update all packages to the latest version
+      apt:
+        upgrade: dist
+
+    - name: Install Packages
+      apt: name={{ item }} state=latest
+      with_items:
+        - ansible
+        - git
+        - ntp
+        - tmux
+        - vim
+        - wget
+        - software-properties-common
+        - apt-transport-https
+        - curl
+        - python-pip
+
+    - name: Set timezone to America/New_York
+      timezone: name=America/New_York
+
+    - name: Start/Enable ntpd
+      service: name=ntp enabled=yes state=started
+
+    - name: Make vagrant the owner of all files in his home dir
+      file: path=/home/vagrant owner=vagrant group=vagrant
+      
+    - name: Git clone bash-it
+      git: >
+        dest=/home/vagrant/.bash_it
+        repo=https://github.com/Bash-it/bash-it.git
+        depth=1
+      become: yes
+      become_user: vagrant
+      register: cloned_bashit
+
+    - name: Install Bash-it
+      become: yes
+      become_user: vagrant
+      shell: echo 'Y' | /home/vagrant/.bash_it/install.sh
+      when: cloned_bashit|changed
+
+    - name: Set Bash-it theme 
+      lineinfile: dest=/home/vagrant/.bashrc regexp='^export BASH_IT_THEME' line='export BASH_IT_THEME=axin'
+
+    - name: add vagrant  .profile if it doesn't exist
+      become_user: vagrant
+      copy: src=profile dest=/home/vagrant/.profile force=no

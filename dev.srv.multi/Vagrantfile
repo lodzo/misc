@@ -1,0 +1,70 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+
+
+  #VM01
+  config.vm.define "vm01", primary: true do |vm01|
+    vm01.vm.box = "debian/testing64"
+    vm01.cache.scope = :box
+    vm01.vm.hostname = "vm01"
+    vm01.hostmanager.aliases = "vm01"
+    vm01.vm.provision "shell", inline: <<-SHELL
+      export DEBIAN_FRONTEND=noninteractive
+      export LANGUAGE=en_US.UTF-8
+      export LANG=en_US.UTF-8
+      export LC_ALL=en_US.UTF-8
+      # locale-gen en_US.UTF-8
+      # dpkg-reconfigure locales
+      sudo apt-get update
+      sudo apt-get install -y ansible
+    SHELL
+    vm01.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/debian-init-ans-playbook.yml"
+    end
+  end
+  # VM02
+  config.vm.define "vm02" do |vm02|
+    vm02.vm.box = "debian/testing64"
+    vm02.cache.scope = :box
+    vm02.vm.hostname = "vm02"
+    vm02.hostmanager.aliases = "vm02"
+    vm02.vm.provision "shell", inline: <<-SHELL
+      export DEBIAN_FRONTEND=noninteractive
+      export LANGUAGE=en_US.UTF-8
+      export LANG=en_US.UTF-8
+      export LC_ALL=en_US.UTF-8
+      # locale-gen en_US.UTF-8
+      # dpkg-reconfigure locales
+      sudo apt-get update
+      sudo apt-get install -y ansible
+    SHELL
+    vm02.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/debian-init-ans-playbook.yml"
+    end
+  end
+  # VM03
+  config.vm.define "vm03" do |vm03|
+    vm03.vm.box = "debian/testing64"
+    vm03.cache.scope = :box
+    vm03.vm.hostname = "vm03"
+    vm03.hostmanager.aliases = "vm03"
+    vm03.vm.provision "shell", inline: <<-SHELL
+      export DEBIAN_FRONTEND=noninteractive
+      export LANGUAGE=en_US.UTF-8
+      export LANG=en_US.UTF-8
+      export LC_ALL=en_US.UTF-8
+      # locale-gen en_US.UTF-8
+      # dpkg-reconfigure locales
+      sudo apt-get update
+      sudo apt-get install -y ansible
+    SHELL
+    vm03.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/debian-init-ans-playbook.yml"
+    end
+  end
+end
