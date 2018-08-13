@@ -1,0 +1,25 @@
+#!/bin/bash
+# get configs
+source do-config
+# Script to delete dev droplet
+echo "Deleting droplet $DROP_NAME"
+doctl compute droplet delete $DROP_NAME
+sleep 5s
+echo "Done, Current droplets are..."
+doctl compute droplet list 
+if is_hostfiled;
+then
+	# clean up /etc/hosts
+	echo "Deleting $DROP_NAME from /etc/hosts"
+	sudo sed -i "/$DROP_NAME/d" /etc/hosts
+	echo "Done, removed from /etc/hosts"
+else
+	# get domain record id
+	#DROP_DNSID=`doctl compute domain records list $DROP_DOMAIN --no-header --format 'ID'`
+	DROP_DNSID=`doctl compute domain records list $DROP_DOMAIN | grep $DROP_SUBDOMAIN | cut -f 1 -d ' '`;
+	echo "Deleting DigiOcean DNS for $DROP_NAME with ID $DROP_DNSID"
+	doctl compute domain records delete $DROP_DOMAIN $DROP_DNSID
+	echo "Done, Current DNS Records are..."
+	doctl compute domain records list $DROP_DOMAIN
+fi
+

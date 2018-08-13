@@ -1,0 +1,24 @@
+#!/bin/bash
+# get configs
+source ./do-config
+echo "Current droplets are..."
+doctl compute droplet list 
+echo ""
+echo "Current configured Name is $DROP_NAME"
+echo ""
+if is_hostfiled;
+then 
+	echo "It's in /etc/hosts the IP is..."
+	grep $DROP_NAME /etc/hosts
+else
+	echo "It's not in /etc/hosts"
+fi
+echo ""
+DROP_DO_DNS=$(doctl compute domain records list $DROP_DOMAIN --format "Data,Name" --no-header 2> /dev/null | grep $DROP_SUBDOMAIN)
+if [ -n "$DROP_DO_DNS" ]
+then
+	echo "It's in DigiOcean DNS the Records are..."
+	echo $DROP_DO_DNS
+else
+	echo "It's not in DigiOcean DNS"
+fi

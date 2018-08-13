@@ -1,0 +1,27 @@
+#!/bin/bash
+# get configs
+source do-config
+# turn of host key checking
+export ANSIBLE_HOST_KEY_CHECKING=False
+# get the ipv4 address for the droplet
+DROP_IP=`doctl compute droplet list $DROP_NAME --no-header --format 'PublicIPv4'`
+# Run the ansible playbook to do the initial setup
+echo ""
+echo "Running ansible"
+ansible-playbook -e 'host_key_checking=False' -i "$DROP_IP," ubu-init-ansible.yml --user=root
+echo ""
+echo "Testing ssh connection"
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no hburzlaff@$DROP_NAME "hostname -f"
+echo ""
+echo "Rebooting the droplet"
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no hburzlaff@$DROP_NAME "sudo reboot"
+echo ""
+echo "waiting 1 min"
+sleep 30s
+echo "30 sec..."
+sleep 15s
+echo "15 sec..."
+sleep 15s
+echo ""
+echo "testing ping"
+ping $DROP_IP -c 3 -i 3

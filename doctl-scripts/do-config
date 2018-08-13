@@ -1,0 +1,40 @@
+#!/bin/bash
+export DROP_DOMAIN="herb.test"
+export DROP_SUBDOMAIN="ubu"; export DROP_IMAGE="ubuntu-16-04-x64";
+#export DROP_TYPE="deb"
+#export DROP_TYPE="ubu18"
+case $DROP_TYPE in
+	"ubu18" )
+		export DROP_SUBDOMAIN="ubu"; export DROP_IMAGE="ubuntu-18-04-x64";;
+	"deb" )
+		export DROP_SUBDOMAIN="deb"; export DROP_IMAGE="debian-9-x64";;
+esac
+
+# doctl compute size list
+export DROP_SIZE="512mb"
+# export DROP_SIZE="2gb"
+
+export DROP_SSH_FINGERPRINT="f2:6c:9a:7c:7d:35:ef:ba:62:6a:53:1f:bf:f1:c8:87,74:ce:70:3b:f1:d3:4a:9a:88:0b:cd:c4:cd:f1:16:62"
+
+# Local Overides
+[ -r "./do-local-config" ] && source "./do-local-config"
+
+export DROP_NAME="$DROP_SUBDOMAIN.$DROP_DOMAIN"
+
+function is_hostfiled() {
+	# Checking if the domain is in /etc/hosts
+	if [ -z $1 ]
+	then
+		DOMAIN_TEST=$DROP_NAME
+	else
+		DOMAIN_TEST=$1
+	fi
+	
+	if (grep -q  $DOMAIN_TEST /etc/hosts);
+	then
+		return 0;
+	else
+		return 1;
+	fi
+}
+#if is_hostfiled ;then echo "Yes, it's hostfiled! "; else echo "No, it's not hostfiled"; fi

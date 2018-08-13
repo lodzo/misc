@@ -1,0 +1,6 @@
+#cloud-config
+packages:
+  - python
+  - ansible
+  - python-pip
+packge_update: true

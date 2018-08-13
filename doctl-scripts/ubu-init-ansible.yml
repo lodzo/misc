@@ -1,0 +1,103 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+
+    - name: Create My User
+      user: name=hburzlaff comment="Herbert Burzlaff" groups=adm append=yes generate_ssh_key=yes shell=/bin/bash
+
+    - name: Add ssh keys for hburzlaff
+      authorized_key: user=hburzlaff key=https://github.com/lodzo.keys
+
+    - name: Set sshd config to not allow root login 
+      lineinfile: dest=/etc/ssh/sshd_config regexp='^PermitRootLogin' line='PermitRootLogin no'
+      notify:
+          - reload sshd
+
+    - name: Set sshd config to not allow PasswordAuthentication
+      lineinfile: dest=/etc/ssh/sshd_config regexp='^PasswordAuthentication' line='PasswordAuthentication no'
+      notify:
+          - reload sshd
+
+    - name: Set sshd config to only allow hburzlaff
+      lineinfile: dest=/etc/ssh/sshd_config regexp='^AllowUsers' line='AllowUsers hburzlaff'
+      notify:
+          - reload sshd
+          
+    - name: Add hburzlaff to sudoers
+      lineinfile: "dest=/etc/sudoers state=present line='hburzlaff  ALL=(ALL)       NOPASSWD: ALL'"
+
+    - name: Update all packages to the latest version
+      apt:
+        upgrade: dist
+
+    - name: Install Packages
+      apt: name={{ item }} state=latest
+      with_items:
+        - ansible
+        - git
+        - ntp
+        - tmux
+        - vim
+        - wget
+
+    - name: Set timezone to America/New_York
+      timezone: name=America/New_York
+
+    - name: Start/Enable ntpd
+      service: name=ntp enabled=yes state=started
+
+    - name: Git clone bash-it for hburzlaff
+      become: yes
+      become_user: hburzlaff
+      git: >
+        dest=/home/hburzlaff/.bash_it
+        repo=https://github.com/Bash-it/bash-it.git
+        depth=1
+      register: cloned_bashit
+
+    - name: Install Bash-it for hburzlaff
+      become: yes
+      become_user: hburzlaff
+      shell: echo 'Y' | /home/hburzlaff/.bash_it/install.sh -i
+      when: cloned_bashit is changed
+
+    - name: Set Bash-it theme for hburzlaff
+      lineinfile: dest=/home/hburzlaff/.bashrc regexp='^export BASH_IT_THEME' line='export BASH_IT_THEME=nwinkler'
+
+# Firewall
+
+    - name: UFW - Install
+      apt: package=ufw state=present
+
+    - name: UFW - Config defaults
+      ufw: direction={{ item.direction }} policy={{ item.policy }}
+      with_items:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+      notify:
+        - restart ufw
+
+    - name: UFW - Config rules
+      ufw: rule={{ item.rule }} port={{ item.port }} proto={{ item.proto }}
+      with_items:
+        - { rule: 'limit', port: '{{ ssh_port | default("22") }}', proto: 'tcp' }
+        - { rule: 'allow', port: '80', proto: 'tcp' }
+        - { rule: 'allow', port: '443', proto: 'tcp' }
+      notify:
+        - restart ufw
+
+    - name: UFW - Enable logging
+      ufw: logging=on
+      notify:
+        - restart ufw
+
+    - name: Enable ufw
+      ufw: state=enabled
+
+  handlers:
+    - name: reload sshd
+      service: name=sshd state=reloaded
+    - name: restart ufw
+      service: name=ufw state=restarted
